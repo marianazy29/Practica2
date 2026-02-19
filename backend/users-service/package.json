@@ -18,12 +18,12 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "glob": "^11.1.0",
-    "jest": "^30.2.0",
+    "jest": "^19.0.2",
     "jsonwebtoken": "^9.0.3",
     "minimatch": "^10.2.1",
     "tar": "^7.5.8"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "nodemon": "^1.0.2"
   }
 }
