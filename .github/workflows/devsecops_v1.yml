@@ -1,0 +1,162 @@
+name: DevSecOps CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  devsecops:
+    runs-on: ubuntu-latest
+
+    steps:
+    # =========================
+    # 1. Checkout
+    # =========================
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # =========================
+    # 2. Setup Node
+    # =========================
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    # =========================
+    # 3. Instalación reproducible + Lint + Test
+    # =========================
+
+    # USERS SERVICE
+    - name: Users Service - Install
+      run: |
+        cd backend/users-service
+        npm ci
+
+    - name: Users Service - Lint
+      run: |
+        cd backend/users-service
+        npm run lint
+
+    - name: Users Service - Test
+      run: |
+        cd backend/users-service
+        npm test
+
+    - name: Users Service - SCA (npm audit)
+      run: |
+        cd backend/users-service
+        npm audit --audit-level=critical
+
+    # ACADEMIC SERVICE
+    - name: Academic Service - Install
+      run: |
+        cd backend/academic-service
+        npm ci
+
+    - name: Academic Service - Lint
+      run: |
+        cd backend/academic-service
+        npm run lint
+
+    - name: Academic Service - Test
+      run: |
+        cd backend/academic-service
+        npm test
+
+    - name: Academic Service - SCA (npm audit)
+      run: |
+        cd backend/academic-service
+        npm audit --audit-level=critical
+
+    # API GATEWAY
+    - name: API Gateway - Install
+      run: |
+        cd backend/api-gateway
+        npm ci
+
+    - name: API Gateway - Lint
+      run: |
+        cd backend/api-gateway
+        npm run lint
+
+    - name: API Gateway - Test
+      run: |
+        cd backend/api-gateway
+        npm test
+
+    - name: API Gateway - SCA (npm audit)
+      run: |
+        cd backend/api-gateway
+        npm audit --audit-level=critical
+
+    # FRONTEND
+    - name: Frontend - Install
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Frontend - Lint
+      run: |
+        cd frontend
+        npm run lint
+
+    - name: Frontend - Test
+      run: |
+        cd frontend
+        npm test
+
+    - name: Frontend - SCA (npm audit)
+      run: |
+        cd frontend
+        npm audit --audit-level=critical
+
+    # =========================
+    # 4. SAST – Semgrep
+    # =========================
+    - name: Install Semgrep
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install semgrep
+
+    - name: Run Semgrep SAST
+      run: |
+        semgrep --config=auto --severity=ERROR .
+
+    # =========================
+    # 5. Docker Build + Versionado
+    # =========================
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker images
+      run: |
+        docker build -t users-service:${{ github.sha }} backend/users-service
+        docker build -t academic-service:${{ github.sha }} backend/academic-service
+        docker build -t api-gateway:${{ github.sha }} backend/api-gateway
+
+    # =========================
+    # 6. Container Security – Trivy
+    # =========================
+    - name: Scan users-service image
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        image-ref: users-service:${{ github.sha }}
+        severity: HIGH,CRITICAL
+        exit-code: 1
+
+    - name: Scan academic-service image
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        image-ref: academic-service:${{ github.sha }}
+        severity: HIGH,CRITICAL
+        exit-code: 1
+
+    - name: Scan api-gateway image
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        image-ref: api-gateway:${{ github.sha }}
+        severity: HIGH,CRITICAL
+        exit-code: 1
