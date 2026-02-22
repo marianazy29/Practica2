@@ -25,9 +25,9 @@ jobs:
       with:
         node-version: 20
 
-    # =========================
+    # ==========================
     # 3. Instalación reproducible + Lint + Test
-    # =========================
+    # ==========================
 
     # USERS SERVICE
     - name: Users Service - Install
